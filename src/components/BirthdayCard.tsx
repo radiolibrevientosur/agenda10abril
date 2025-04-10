@@ -62,7 +62,7 @@ export const BirthdayCard: React.FC<BirthdayCardProps> = ({
               <button
                 onClick={() => setIs
 
-ReminderModalOpen(true)}}
+onClick={() => setIsReminderModalOpen(true)}
                 className={`p-2 rounded-full transition-colors ${
                   birthday.reminder?.enabled 
                     ? 'text-purple-500 bg-purple-50 dark:bg-purple-900/20' 
