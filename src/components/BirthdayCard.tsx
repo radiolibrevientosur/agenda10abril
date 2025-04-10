@@ -60,9 +60,7 @@ export const BirthdayCard: React.FC<BirthdayCardProps> = ({
             </div>
             <div className="flex space-x-2">
               <button
-                onClick={() => setIs
-
-onClick={() => setIsReminderModalOpen(true)}
+                onClick={() => setIsReminderModalOpen(true)}
                 className={`p-2 rounded-full transition-colors ${
                   birthday.reminder?.enabled 
                     ? 'text-purple-500 bg-purple-50 dark:bg-purple-900/20' 
