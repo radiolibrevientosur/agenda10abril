@@ -6,6 +6,7 @@ import { TaskForm } from './components/TaskForm';
 import { BirthdayForm } from './components/BirthdayForm';
 import { CreateOptions } from './components/CreateOptions';
 import { EventList } from './components/EventList';
+import { VirtualizedEventList } from './components/VirtualizedEventList';
 import { CalendarView } from './components/CalendarView';
 import { EventDetails } from './components/EventDetails';
 import { Navbar } from './components/Navbar';
@@ -13,7 +14,7 @@ import { ProfileEditor } from './components/ProfileEditor';
 import { FavoritesSection } from './components/FavoritesSection';
 import { Footer } from './components/Footer';
 import { useEvents } from './hooks/useEvents';
-import { EventFormData, ActiveSection, CreateOption, TaskData, BirthdayData } from './types';
+import { EventFormData, ActiveSection, CreateOption } from './types';
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -21,8 +22,6 @@ function App() {
   const [activeSection, setActiveSection] = useState<ActiveSection>(null);
   const [createOption, setCreateOption] = useState<CreateOption>(null);
   const [editingEvent, setEditingEvent] = useState<EventFormData | undefined>();
-  const [editingTask, setEditingTask] = useState<TaskData | undefined>();
-  const [editingBirthday, setEditingBirthday] = useState<BirthdayData | undefined>();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : false;
@@ -30,17 +29,10 @@ function App() {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   
   const {
-    items,
     events,
     addEvent,
-    addTask,
-    addBirthday,
     updateEvent,
-    updateTask,
-    updateBirthday,
     deleteEvent,
-    deleteTask,
-    deleteBirthday,
     toggleReminder,
     toggleFavorite,
     filters,
@@ -52,25 +44,13 @@ function App() {
     document.documentElement.classList.toggle('dark', isDarkMode);
   }, [isDarkMode]);
 
-  const handleEditEvent = (event: EventFormData) => {
+  const handleEdit = (event: EventFormData) => {
     setEditingEvent(event);
     setActiveSection('create');
     setCreateOption('event');
   };
 
-  const handleEditTask = (task: TaskData) => {
-    setEditingTask(task);
-    setActiveSection('create');
-    setCreateOption('task');
-  };
-
-  const handleEditBirthday = (birthday: BirthdayData) => {
-    setEditingBirthday(birthday);
-    setActiveSection('create');
-    setCreateOption('birthday');
-  };
-
-  const handleSubmitEvent = (eventData: Omit<EventFormData, 'id'>) => {
+  const handleSubmit = (eventData: Omit<EventFormData, 'id'>) => {
     if (editingEvent) {
       updateEvent({ ...eventData, id: editingEvent.id });
     } else {
@@ -78,36 +58,11 @@ function App() {
     }
     setActiveSection(null);
     setCreateOption(null);
-    setEditingEvent(undefined);
-  };
-
-  const handleSubmitTask = (taskData: Omit<TaskData, 'id'>) => {
-    if (editingTask) {
-      updateTask({ ...taskData, id: editingTask.id });
-    } else {
-      addTask(taskData);
-    }
-    setActiveSection(null);
-    setCreateOption(null);
-    setEditingTask(undefined);
-  };
-
-  const handleSubmitBirthday = (birthdayData: Omit<BirthdayData, 'id'>) => {
-    if (editingBirthday) {
-      updateBirthday({ ...birthdayData, id: editingBirthday.id });
-    } else {
-      addBirthday(birthdayData);
-    }
-    setActiveSection(null);
-    setCreateOption(null);
-    setEditingBirthday(undefined);
   };
 
   const handleCloseForm = () => {
     setActiveSection(null);
     setEditingEvent(undefined);
-    setEditingTask(undefined);
-    setEditingBirthday(undefined);
     setCreateOption(null);
   };
 
@@ -123,13 +78,9 @@ function App() {
           >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <EventList
-                items={items}
-                onEditEvent={handleEditEvent}
-                onEditTask={handleEditTask}
-                onEditBirthday={handleEditBirthday}
-                onDeleteEvent={deleteEvent}
-                onDeleteTask={deleteTask}
-                onDeleteBirthday={deleteBirthday}
+                events={events}
+                onEdit={handleEdit}
+                onDelete={deleteEvent}
                 filters={filters}
                 onFilterChange={setFilters}
                 onToggleReminder={toggleReminder}
@@ -157,7 +108,7 @@ function App() {
           case 'event':
             return (
               <EventForm
-                onSubmit={handleSubmitEvent}
+                onSubmit={handleSubmit}
                 onClose={handleCloseForm}
                 initialData={editingEvent}
               />
@@ -165,17 +116,21 @@ function App() {
           case 'task':
             return (
               <TaskForm
-                onSubmit={handleSubmitTask}
+                onSubmit={(taskData) => {
+                  // Handle task submission
+                  handleCloseForm();
+                }}
                 onClose={handleCloseForm}
-                initialData={editingTask}
               />
             );
           case 'birthday':
             return (
               <BirthdayForm
-                onSubmit={handleSubmitBirthday}
+                onSubmit={(birthdayData) => {
+                  // Handle birthday submission
+                  handleCloseForm();
+                }}
                 onClose={handleCloseForm}
-                initialData={editingBirthday}
               />
             );
         }
@@ -191,7 +146,7 @@ function App() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <FavoritesSection
                 events={events}
-                onEdit={handleEditEvent}
+                onEdit={handleEdit}
                 onDelete={deleteEvent}
                 onToggleReminder={toggleReminder}
                 onToggleFavorite={toggleFavorite}
@@ -278,13 +233,9 @@ function App() {
                   <>
                     {viewMode === 'list' ? (
                       <EventList
-                        items={items}
-                        onEditEvent={handleEditEvent}
-                        onEditTask={handleEditTask}
-                        onEditBirthday={handleEditBirthday}
-                        onDeleteEvent={deleteEvent}
-                        onDeleteTask={deleteTask}
-                        onDeleteBirthday={deleteBirthday}
+                        events={events}
+                        onEdit={handleEdit}
+                        onDelete={deleteEvent}
                         filters={filters}
                         onFilterChange={setFilters}
                         onToggleReminder={toggleReminder}
@@ -293,7 +244,7 @@ function App() {
                     ) : (
                       <CalendarView
                         events={events}
-                        onEventClick={handleEditEvent}
+                        onEventClick={(event) => handleEdit(event)}
                       />
                     )}
                     <Footer />
@@ -305,7 +256,7 @@ function App() {
                 element={
                   <EventDetails
                     events={events}
-                    onEdit={handleEditEvent}
+                    onEdit={handleEdit}
                     onDelete={deleteEvent}
                     onToggleReminder={toggleReminder}
                     onToggleFavorite={toggleFavorite}

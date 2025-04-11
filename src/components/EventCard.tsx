@@ -1,5 +1,4 @@
-// EventCard.tsx (Correcciones parciales - floating UI)
-import React, { useState } from 'react'; // Removido useRef
+import React, { useState, useRef } from 'react';
 import { EventFormData } from '../types';
 import { Calendar, MapPin, Users, Edit, Trash2, Share2, Download, Copy, Bell, Star, FileDown, CalendarPlus } from 'lucide-react';
 import { toPng } from 'html-to-image';
@@ -7,9 +6,7 @@ import { FacebookShareButton, TwitterShareButton, WhatsappShareButton } from 're
 import toast from 'react-hot-toast';
 import { generateShareMessage } from '../utils/shareFormatters';
 import { exportToICS, addToGoogleCalendar } from '../utils/exportUtils';
-// ... (otros imports)
-import { useFloating, offset, shift, flip } from '@floating-ui/react'; // Removido arrow
-
+import { useFloating, offset, shift, flip, arrow } from '@floating-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface EventCardProps {
@@ -20,8 +17,6 @@ interface EventCardProps {
   onToggleFavorite: (id: string) => void;
 }
 
-// ... (interfaces y props iguales)
-
 export const EventCard: React.FC<EventCardProps> = ({
   event,
   onEdit,
@@ -29,11 +24,16 @@ export const EventCard: React.FC<EventCardProps> = ({
   onToggleReminder,
   onToggleFavorite,
 }) => {
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [reminderMinutes, setReminderMinutes] = useState(30);
+  const [showTooltip, setShowTooltip] = useState(false);
+
   const { refs, floatingStyles } = useFloating({
     placement: 'top',
-    middleware: [offset(10), flip(), shift()], // Removido arrow()
+    middleware: [offset(10), flip(), shift()],
   });
-
 
   const handleCopyText = async () => {
     try {

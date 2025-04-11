@@ -11,7 +11,89 @@ const FAVORITES_KEY = 'favorite-events';
 const alarmSound = new Audio('/alarm.mp3');
 
 const generateRecurringEvents = (baseEvent: EventFormData): EventFormData[] => {
-  // ... (mantener el código existente de generateRecurringEvents)
+  const events: EventFormData[] = [];
+  const baseDate = new Date(baseEvent.datetime);
+  const now = new Date();
+  const MAX_EVENTS = 100; // Límite para evitar sobrecarga
+
+  switch (baseEvent.recurrence.type) {
+    case 'diaria': {
+      for (let i = 0; i < 30 && events.length < MAX_EVENTS; i++) {
+        const newDate = new Date(baseDate);
+        newDate.setDate(newDate.getDate() + i);
+        if (newDate > now) {
+          events.push({
+            ...baseEvent,
+            id: crypto.randomUUID(),
+            datetime: newDate.toISOString(),
+          });
+        }
+      }
+      break;
+    }
+
+    case 'anual': {
+      for (let i = 0; i < 5 && events.length < MAX_EVENTS; i++) {
+        const newDate = new Date(baseDate);
+        newDate.setFullYear(newDate.getFullYear() + i);
+        if (newDate > now) {
+          events.push({
+            ...baseEvent,
+            id: crypto.randomUUID(),
+            datetime: newDate.toISOString(),
+          });
+        }
+      }
+      break;
+    }
+
+    case 'personalizada': {
+      if (!baseEvent.recurrence.daysOfWeek?.length && !baseEvent.recurrence.endDate && !baseEvent.recurrence.occurrences) {
+        events.push({
+          ...baseEvent,
+          id: crypto.randomUUID(),
+        });
+        break;
+      }
+
+      const endDate = baseEvent.recurrence.endDate 
+        ? new Date(baseEvent.recurrence.endDate)
+        : new Date(now.getTime() + (365 * 24 * 60 * 60 * 1000)); // Default to 1 year
+
+      const maxOccurrences = baseEvent.recurrence.occurrences || MAX_EVENTS;
+      const daysOfWeek = baseEvent.recurrence.daysOfWeek || [];
+      
+      let currentDate = new Date(baseDate);
+      
+      while (events.length < maxOccurrences && currentDate <= endDate && events.length < MAX_EVENTS) {
+        const dayName = currentDate.toLocaleDateString('es-ES', { weekday: 'long' });
+        const capitalizedDayName = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+
+        if (daysOfWeek.includes(capitalizedDayName) && currentDate > now) {
+          events.push({
+            ...baseEvent,
+            id: crypto.randomUUID(),
+            datetime: currentDate.toISOString(),
+          });
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      break;
+    }
+
+    default: {
+      // Una sola vez
+      if (baseDate > now) {
+        events.push({
+          ...baseEvent,
+          id: crypto.randomUUID(),
+        });
+      }
+    }
+  }
+
+  return events;
 };
 
 export const useEvents = () => {
@@ -27,7 +109,7 @@ export const useEvents = () => {
 
   useEffect(() => {
     const loadStoredData = () => {
-      // Cargar eventos
+      // Load events
       const storedEvents = localStorage.getItem(STORAGE_KEY);
       const storedReminders = localStorage.getItem(REMINDERS_KEY);
       const storedFavorites = localStorage.getItem(FAVORITES_KEY);
@@ -35,7 +117,7 @@ export const useEvents = () => {
       if (storedEvents) {
         const parsedEvents = JSON.parse(storedEvents);
         
-        // Apply reminders
+        // Apply reminders and favorites
         if (storedReminders) {
           const reminders = JSON.parse(storedReminders);
           parsedEvents.forEach((event: EventFormData) => {
@@ -43,7 +125,6 @@ export const useEvents = () => {
           });
         }
 
-        // Apply favorites
         if (storedFavorites) {
           const favorites = JSON.parse(storedFavorites);
           parsedEvents.forEach((event: EventFormData) => {
@@ -62,20 +143,19 @@ export const useEvents = () => {
         setEvents(validEvents);
       }
 
-      // Cargar tareas
+      // Load tasks
       const storedTasks = localStorage.getItem(TASKS_KEY);
       if (storedTasks) {
         const parsedTasks = JSON.parse(storedTasks);
-        const now = new Date();
         const validTasks = parsedTasks
-          .filter((task: TaskData) => new Date(task.dueDate) > now)
+          .filter((task: TaskData) => new Date(task.dueDate) > new Date())
           .sort((a: TaskData, b: TaskData) => 
             new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
           );
         setTasks(validTasks);
       }
 
-      // Cargar cumpleaños
+      // Load birthdays
       const storedBirthdays = localStorage.getItem(BIRTHDAYS_KEY);
       if (storedBirthdays) {
         const parsedBirthdays = JSON.parse(storedBirthdays);
@@ -88,62 +168,43 @@ export const useEvents = () => {
 
   useEffect(() => {
     const checkReminders = () => {
-      const checkItem = (item: EventFormData | TaskData | BirthdayData) => {
-        if (item.reminder?.enabled) {
-          const itemTime = new Date(item.itemType === 'birthday' ? item.birthDate : 
-                                  item.itemType === 'task' ? item.dueDate : 
-                                  item.datetime).getTime();
-          const reminderTime = itemTime - (item.reminder.minutesBefore * 60 * 1000);
+      events.forEach(event => {
+        if (event.reminder?.enabled) {
+          const eventTime = new Date(event.datetime).getTime();
+          const reminderTime = eventTime - (event.reminder.minutesBefore * 60 * 1000);
           const now = new Date().getTime();
 
-          if (now >= reminderTime && now < itemTime && !item.reminder.triggered) {
+          if (now >= reminderTime && now < eventTime && !event.reminder.triggered) {
             alarmSound.play().catch(console.error);
 
             if ('Notification' in window && Notification.permission === 'granted') {
-              new Notification('Recordatorio', {
-                body: `${item.itemType === 'birthday' ? 'Cumpleaños de' : 
-                       item.itemType === 'task' ? 'Tarea:' : 
-                       'Evento:'} "${item.title}"`,
+              new Notification('Recordatorio de Evento', {
+                body: `El evento "${event.title}" comenzará en ${event.reminder.minutesBefore} minutos`,
                 icon: '/icon.png'
               });
             }
 
-            // Marcar recordatorio como activado
-            if (item.itemType === 'event') {
-              const updatedEvents = events.map(e => {
-                if (e.id === item.id && e.reminder) {
-                  return { ...e, reminder: { ...e.reminder, triggered: true } };
-                }
-                return e;
-              });
-              saveEvents(updatedEvents);
-            } else if (item.itemType === 'task') {
-              const updatedTasks = tasks.map(t => {
-                if (t.id === item.id && t.reminder) {
-                  return { ...t, reminder: { ...t.reminder, triggered: true } };
-                }
-                return t;
-              });
-              saveTasks(updatedTasks);
-            } else if (item.itemType === 'birthday') {
-              const updatedBirthdays = birthdays.map(b => {
-                if (b.id === item.id && b.reminder) {
-                  return { ...b, reminder: { ...b.reminder, triggered: true } };
-                }
-                return b;
-              });
-              saveBirthdays(updatedBirthdays);
-            }
+            const updatedEvents = events.map(e => {
+              if (e.id === event.id && e.reminder) {
+                return {
+                  ...e,
+                  reminder: {
+                    ...e.reminder,
+                    triggered: true
+                  }
+                };
+              }
+              return e;
+            });
+            saveEvents(updatedEvents);
           }
         }
-      };
-
-      [...events, ...tasks, ...birthdays].forEach(checkItem);
+      });
     };
 
     const interval = setInterval(checkReminders, 60000);
     return () => clearInterval(interval);
-  }, [events, tasks, birthdays]);
+  }, [events]);
 
   const saveEvents = (newEvents: EventFormData[]) => {
     const now = new Date();
@@ -170,11 +231,10 @@ export const useEvents = () => {
   };
 
   const saveTasks = (newTasks: TaskData[]) => {
-    const now = new Date();
     const validTasks = newTasks
-      .filter(task => new Date(task.dueDate) > now)
+      .filter(task => new Date(task.dueDate) > new Date())
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-
+    
     localStorage.setItem(TASKS_KEY, JSON.stringify(validTasks));
     setTasks(validTasks);
   };
@@ -184,8 +244,21 @@ export const useEvents = () => {
     setBirthdays(newBirthdays);
   };
 
+  const addTask = (task: Omit<TaskData, 'id'>) => {
+    const newTask = { ...task, id: crypto.randomUUID() };
+    saveTasks([...tasks, newTask]);
+    toast.success('Tarea creada exitosamente');
+  };
+
+  const addBirthday = (birthday: Omit<BirthdayData, 'id'>) => {
+    const newBirthday = { ...birthday, id: crypto.randomUUID() };
+    saveBirthdays([...birthdays, newBirthday]);
+    toast.success('Cumpleaños registrado exitosamente');
+  };
+
   const addEvent = (event: Omit<EventFormData, 'id'>) => {
     const baseEvent = { ...event, id: crypto.randomUUID() };
+    
     const recurringEvents = generateRecurringEvents(baseEvent);
 
     if (recurringEvents.length === 0) {
@@ -209,52 +282,16 @@ export const useEvents = () => {
     toast.success(`${newEvents.length} evento(s) creado(s) exitosamente`);
   };
 
-  const addTask = (task: Omit<TaskData, 'id'>) => {
-    const newTask = { ...task, id: crypto.randomUUID() };
-    saveTasks([...tasks, newTask]);
-    toast.success('Tarea creada exitosamente');
-  };
-
-  const addBirthday = (birthday: Omit<BirthdayData, 'id'>) => {
-    const newBirthday = { ...birthday, id: crypto.randomUUID() };
-    saveBirthdays([...birthdays, newBirthday]);
-    toast.success('Cumpleaños agregado exitosamente');
-  };
-
   const updateEvent = (event: EventFormData) => {
     const newEvents = events.map(e => e.id === event.id ? event : e);
     saveEvents(newEvents);
     toast.success('Evento actualizado exitosamente');
   };
 
-  const updateTask = (task: TaskData) => {
-    const newTasks = tasks.map(t => t.id === task.id ? task : t);
-    saveTasks(newTasks);
-    toast.success('Tarea actualizada exitosamente');
-  };
-
-  const updateBirthday = (birthday: BirthdayData) => {
-    const newBirthdays = birthdays.map(b => b.id === birthday.id ? birthday : b);
-    saveBirthdays(newBirthdays);
-    toast.success('Cumpleaños actualizado exitosamente');
-  };
-
   const deleteEvent = (id: string) => {
     const newEvents = events.filter(e => e.id !== id);
     saveEvents(newEvents);
     toast.success('Evento eliminado exitosamente');
-  };
-
-  const deleteTask = (id: string) => {
-    const newTasks = tasks.filter(t => t.id !== id);
-    saveTasks(newTasks);
-    toast.success('Tarea eliminada exitosamente');
-  };
-
-  const deleteBirthday = (id: string) => {
-    const newBirthdays = birthdays.filter(b => b.id !== id);
-    saveBirthdays(newBirthdays);
-    toast.success('Cumpleaños eliminado exitosamente');
   };
 
   const toggleFavorite = (id: string) => {
@@ -268,95 +305,76 @@ export const useEvents = () => {
     toast.success(event?.isFavorite ? 'Añadido a favoritos' : 'Eliminado de favoritos');
   };
 
-  const toggleReminder = (id: string, minutesBefore: number, itemType: 'event' | 'task' | 'birthday') => {
+  const toggleReminder = (id: string, minutesBefore: number) => {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
 
-    if (itemType === 'event') {
-      const newEvents = events.map(event =>
-        event.id === id
-          ? {
-              ...event,
-              reminder: {
-                enabled: true,
-                minutesBefore,
-                triggered: false
-              },
-            }
-          : event
-      );
-      saveEvents(newEvents);
-    } else if (itemType === 'task') {
-      const newTasks = tasks.map(task =>
-        task.id === id
-          ? {
-              ...task,
-              reminder: {
-                enabled: true,
-                minutesBefore,
-                triggered: false
-              },
-            }
-          : task
-      );
-      saveTasks(newTasks);
-    } else if (itemType === 'birthday') {
-      const newBirthdays = birthdays.map(birthday =>
-        birthday.id === id
-          ? {
-              ...birthday,
-              reminder: {
-                enabled: true,
-                minutesBefore,
-                triggered: false
-              },
-            }
-          : birthday
-      );
-      saveBirthdays(newBirthdays);
-    }
-    
+    const newEvents = events.map(event =>
+      event.id === id
+        ? {
+            ...event,
+            reminder: {
+              enabled: true,
+              minutesBefore,
+              triggered: false
+            },
+          }
+        : event
+    );
+    saveEvents(newEvents);
     toast.success('Recordatorio configurado exitosamente');
   };
 
   const filteredItems = [...events, ...tasks, ...birthdays].filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-      (item.description?.toLowerCase().includes(filters.search.toLowerCase()) ?? false);
-    
-    if (item.itemType === 'event') {
-      const event = item as EventFormData;
-      const matchesCategory = !filters.category || event.category === filters.category;
-      const matchesType = !filters.eventType || event.eventType === filters.eventType;
-      const matchesDate = !filters.date || event.datetime.startsWith(filters.date);
-      return matchesSearch && matchesCategory && matchesType && matchesDate;
+    const searchTerm = filters.search.toLowerCase();
+    let matches = false;
+
+    if ('title' in item) {
+      matches = item.title.toLowerCase().includes(searchTerm) ||
+        (item.description?.toLowerCase().includes(searchTerm) || false);
+    } else if ('name' in item) {
+      matches = item.name.toLowerCase().includes(searchTerm) ||
+        (item.description?.toLowerCase().includes(searchTerm) || false);
     }
-    
-    return matchesSearch;
+
+    if (!matches) return false;
+
+    if (filters.category && 'category' in item && item.category !== filters.category) {
+      return false;
+    }
+
+    if (filters.eventType && 'eventType' in item && item.eventType !== filters.eventType) {
+      return false;
+    }
+
+    if (filters.date) {
+      const itemDate = 'datetime' in item ? item.datetime :
+                      'dueDate' in item ? item.dueDate :
+                      'birthDate' in item ? item.birthDate : '';
+      if (!itemDate.startsWith(filters.date)) {
+        return false;
+      }
+    }
+
+    return true;
   }).sort((a, b) => {
-    const dateA = new Date(a.itemType === 'birthday' ? a.birthDate : 
-                          a.itemType === 'task' ? a.dueDate : 
-                          a.datetime).getTime();
-    const dateB = new Date(b.itemType === 'birthday' ? b.birthDate : 
-                          b.itemType === 'task' ? b.dueDate : 
-                          b.datetime).getTime();
-    return dateA - dateB;
+    const dateA = 'datetime' in a ? new Date(a.datetime) :
+                 'dueDate' in a ? new Date(a.dueDate) :
+                 'birthDate' in a ? new Date(a.birthDate) : new Date();
+    const dateB = 'datetime' in b ? new Date(b.datetime) :
+                 'dueDate' in b ? new Date(b.dueDate) :
+                 'birthDate' in b ? new Date(b.birthDate) : new Date();
+    return dateA.getTime() - dateB.getTime();
   });
 
   return {
-    items: filteredItems,
-    events,
-    tasks,
-    birthdays,
+    events: filteredItems,
     addEvent,
+    updateEvent,
+    deleteEvent,
     addTask,
     addBirthday,
-    updateEvent,
-    updateTask,
-    updateBirthday,
-    deleteEvent,
-    deleteTask,
-    deleteBirthday,
     toggleReminder,
     toggleFavorite,
     filters,
