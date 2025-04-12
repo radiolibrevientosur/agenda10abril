@@ -98,28 +98,26 @@ function App() {
   // Resto del código de renderizado...
   
   // Modificar las secciones de creación
-  case 'task':
+ case 'create':
+  if (!createOption) {
     return (
-      <TaskForm
-        onSubmit={(taskData) => {
-          addTask(taskData);
-          handleCloseForm();
-        }}
-        onClose={handleCloseForm}
-      />
+      <motion.div...>
+        <CreateOptions.../>
+      </motion.div>
     );
-  case 'birthday':
-    return (
-      <BirthdayForm
-        onSubmit={(birthdayData) => {
-          addBirthday(birthdayData);
-          handleCloseForm();
-        }}
-        onClose={handleCloseForm}
-      />
-    );
-
-  // Actualizar la sección de favoritos
+  }
+  
+  switch (createOption) {
+    case 'event':
+      return <EventForm.../>;
+    case 'task':
+      return <TaskForm.../>;
+    case 'birthday':
+      return <BirthdayForm.../>;
+    default:
+      return null;
+  } // <-- Aquí termina el switch interno
+// break eliminado aquí // Actualizar la sección de favoritos
   <FavoritesSection
     events={events}
     tasks={tasks}
