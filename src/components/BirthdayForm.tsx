@@ -17,14 +17,14 @@ export const BirthdayForm: React.FC<BirthdayFormProps> = ({ onSubmit, onClose })
   });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.birthDate) {
-      toast.error('Por favor complete los campos requeridos');
-      return;
-    }
-    onSubmit(formData);
-    onClose();
-  };
+  e.preventDefault();
+  if (!formData.name || !formData.birthDate) {
+    toast.error("Por favor complete los campos requeridos");
+    return;
+  }
+  onSubmit(formData); // ✅ Asegurar que se llame a onSubmit
+  onClose();
+};
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -91,13 +91,12 @@ export const BirthdayForm: React.FC<BirthdayFormProps> = ({ onSubmit, onClose })
               >
                 Cancelar
               </button>
-              <button
-                type="submit"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-pink-600 hover:bg-pink-700"
-              >
-                Guardar Cumpleaños
-              </button>
-            </div>
+             <button
+  type="submit"
+  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-pink-600 hover:bg-pink-700"
+>
+  Guardar Cumpleaños
+</button>
           </form>
         </div>
       </div>
