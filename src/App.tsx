@@ -42,7 +42,18 @@ function App() {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   
   const [tasks, setTasks] = useLocalStorage<TaskData[]>('tasks', []);
-  const [birthdays, setBirthdays] = useLocalStorage<BirthdayData[]>('birthdays', []);
+  // App.tsx
+const addBirthday = (birthdayData: Omit<BirthdayData, "id">) => {
+  setBirthdays(prev => [
+    ...prev,
+    { 
+      ...birthdayData, 
+      id: crypto.randomUUID(),
+      isFavorite: false, // Añadir si falta
+      reminder: { enabled: false, minutesBefore: 0 } // Añadir si falta
+    }
+  ]);
+};
 
   const {
     events,
@@ -55,10 +66,20 @@ function App() {
     setFilters
   } = useEvents();
 
+  // Hook useLocalStorage en App.tsx
+function useLocalStorage<T>(key: string, initialValue: T) {
+  const [value, setValue] = useState<T>(() => {
+    const storedValue = localStorage.getItem(key);
+    return storedValue ? JSON.parse(storedValue) : initialValue;
+  });
+
   useEffect(() => {
-    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
-    document.documentElement.classList.toggle('dark', isDarkMode);
-  }, [isDarkMode]);
+    localStorage.setItem(key, JSON.stringify(value));
+    console.log("Datos guardados:", key, value); // Depuración
+  }, [key, value]);
+
+  return [value, setValue] as const;
+}
 
   const handleEdit = (event: EventFormData) => {
     setEditingEvent(event);
