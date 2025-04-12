@@ -5,9 +5,9 @@ import { motion } from 'framer-motion';
 
 interface BirthdayCardProps {
   birthday: BirthdayData;
-  onDelete: (id: string) => void;
+  onDelete: (type: 'birthday', id: string) => void;
   onToggleReminder: (id: string, minutesBefore: number) => void;
-  onToggleFavorite: (id: string) => void;
+  onToggleFavorite: (type: 'birthday', id: string) => void;
 }
 
 export const BirthdayCard: React.FC<BirthdayCardProps> = ({
@@ -46,7 +46,7 @@ export const BirthdayCard: React.FC<BirthdayCardProps> = ({
           </div>
           <div className="flex space-x-2">
             <button
-              onClick={() => onToggleFavorite(birthday.id)}
+              onClick={() => onToggleFavorite('birthday', birthday.id)}
               className={`p-2 rounded-full transition-colors ${
                 birthday.isFavorite 
                   ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' 
@@ -56,7 +56,7 @@ export const BirthdayCard: React.FC<BirthdayCardProps> = ({
               <Star size={20} fill={birthday.isFavorite ? 'currentColor' : 'none'} />
             </button>
             <button
-              onClick={() => onToggleReminder(birthday.id, 1440)} // 24 hours before
+              onClick={() => onToggleReminder(birthday.id, 1440)}
               className={`p-2 rounded-full transition-colors ${
                 birthday.reminder?.enabled 
                   ? 'text-purple-500 bg-purple-50 dark:bg-purple-900/20' 
@@ -66,7 +66,7 @@ export const BirthdayCard: React.FC<BirthdayCardProps> = ({
               <Bell size={20} fill={birthday.reminder?.enabled ? 'currentColor' : 'none'} />
             </button>
             <button
-              onClick={() => onDelete(birthday.id)}
+              onClick={() => onDelete('birthday', birthday.id)}
               className="p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             >
               <Trash2 size={20} />
