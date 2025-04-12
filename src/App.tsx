@@ -131,20 +131,27 @@ function App() {
                 initialData={editingEvent}
               />
             );
-          case 'task':
-            return (
-              <TaskForm
-                onSubmit={addTask}
-                onClose={handleCloseForm}
-              />
-            );
-          case 'birthday':
-            return (
-              <BirthdayForm
-                onSubmit={addBirthday}
-                onClose={handleCloseForm}
-              />
-            );
+          // En la sección del switch-case para 'create':
+case 'task':
+  return (
+    <TaskForm
+      onSubmit={(taskData) => {
+        addTask(taskData); // ✅ Llamar a addTask con los datos
+        handleCloseForm();
+      }}
+      onClose={handleCloseForm}
+    />
+  );
+case 'birthday':
+  return (
+    <BirthdayForm
+      onSubmit={(birthdayData) => {
+        addBirthday(birthdayData); // ✅ Llamar a addBirthday
+        handleCloseForm();
+      }}
+      onClose={handleCloseForm}
+    />
+  );
           default:
             return null;
         }
