@@ -7,63 +7,55 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
-      manifest: {
-        name: 'Agenda Cultural',
-        short_name: 'Agenda',
-        description: 'Administrador de eventos culturales',
-        theme_color: '#9333ea',
-        background_color: '#ffffff',
-        icons: [
-          {
-            src: 'pwa-64x64.png',
-            sizes: '64x64',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: 'maskable-icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
-          }
-        ]
-      },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,
+            urlPattern: /^https:\/\/fonts\.googleapis\.com/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'unsplash-images',
+              cacheName: 'google-fonts-cache',
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 30 * 24 * 60 * 60 // 30 days
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
               }
             }
           },
           {
-            urlPattern: /^https:\/\/api\.*/i,
+            urlPattern: /^https:\/\/api\.unsplash\.com/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
               networkTimeoutSeconds: 10,
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 24 * 60 * 60 // 24 hours
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
               }
             }
+          }
+        ]
+      },
+      manifest: {
+        name: 'Gestión Cultural',
+        short_name: 'GestionCultural',
+        description: 'Aplicación para la gestión de eventos culturales',
+        theme_color: '#FF7F50',
+        icons: [
+          {
+            src: '/icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: '/icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png'
           }
         ]
       }
