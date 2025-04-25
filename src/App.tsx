@@ -3,7 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/AuthContext';
 import { Auth } from './components/auth/Auth';
 import { CulturalProvider } from './context/CulturalContext';
-import { Calendar, Heart, Users, Home, PlusCircle, Sun, Moon, MoreVertical, LogOut, User, Settings } from 'lucide-react';
+import { Calendar, Heart, Users, Home, PlusCircle, Sun, Moon, MoreVertical, LogOut, User } from 'lucide-react';
 import { EventoCulturalForm } from './components/cultural/EventoCulturalForm';
 import { BirthdayForm } from './components/cultural/BirthdayForm';
 import { TaskForm } from './components/cultural/TaskForm';
@@ -232,16 +232,9 @@ function AppContent() {
     }
   };
 
-  const handleClickOutside = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (!target.closest('.menu-container')) {
-      setIsMenuOpen(false);
-    }
-  };
-
   return (
     <CulturalProvider>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col" onClick={handleClickOutside}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
         <OfflineIndicator />
         <header className="bg-white dark:bg-gray-800 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -251,7 +244,13 @@ function AppContent() {
                 <span className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">Gestión Cultural</span>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="relative menu-container">
+                <button
+                  onClick={toggleTheme}
+                  className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  {theme === 'dark' ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
+                </button>
+                <div className="relative">
                   <button
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                     className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -259,29 +258,12 @@ function AppContent() {
                     <MoreVertical className="h-6 w-6" />
                   </button>
                   {isMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-10">
-                      <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center">
-                          <User className="h-4 w-4 mr-2" />
-                          {user.email}
-                        </div>
-                      </div>
-                      <button
-                        onClick={toggleTheme}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        {theme === 'dark' ? (
-                          <Sun className="h-4 w-4 mr-2" />
-                        ) : (
-                          <Moon className="h-4 w-4 mr-2" />
-                        )}
-                        Modo {theme === 'dark' ? 'Claro' : 'Oscuro'}
-                      </button>
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-10">
                       <button
                         className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Configuración
+                        <User className="h-4 w-4 mr-2" />
+                        Mi Cuenta
                       </button>
                       <button
                         onClick={() => signOut()}
